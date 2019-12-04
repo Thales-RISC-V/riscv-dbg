@@ -71,10 +71,10 @@ module dm_mem #(
     localparam logic [DbgAddressBits-1:0] FlagsEnd  = 'h7FF;
 
 
-    localparam logic [DbgAddressBits-1:0] Halted    = 'h100;
-    localparam logic [DbgAddressBits-1:0] Going     = 'h104;
-    localparam logic [DbgAddressBits-1:0] Resuming  = 'h108;
-    localparam logic [DbgAddressBits-1:0] Exception = 'h10C;
+    localparam logic [DbgAddressBits-1:0] Halted_add    = 'h100;
+    localparam logic [DbgAddressBits-1:0] Going_add     = 'h104;
+    localparam logic [DbgAddressBits-1:0] Resuming_add  = 'h108;
+    localparam logic [DbgAddressBits-1:0] Exception_add = 'h10C;
 
     logic [dm::ProgBufSize/2-1:0][63:0]   progbuf;
     logic [4:0][63:0]   abstract_cmd;
@@ -194,8 +194,8 @@ module dm_mem #(
         // write data in csr register
         data_valid_o = 1'b0;
         exception    = 1'b0;
-        halted       = '0;
-        going        = 1'b0;
+        //halted       = '0;
+        //going        = 1'b0;
         // The resume ack signal is lowered when the resume request is deasserted
         if (clear_resumeack_i) begin
             resuming_d[hartsel_i] = 1'b0;
@@ -205,21 +205,21 @@ module dm_mem #(
             // this is a write
             if (we_i) begin
                 unique case (addr_i[DbgAddressBits-1:0]) inside
-                    Halted: begin
+                    Halted_add: begin
                         halted[hart_sel] = 1'b1;
                         halted_d[hart_sel] = 1'b1;
                     end
-                    Going: begin
+                    Going_add: begin
                         going = 1'b1;
                     end
-                    Resuming: begin
+                    Resuming_add: begin
                         // clear the halted flag as the hart resumed execution
                         halted_d[hart_sel] = 1'b0;
                         // set the resuming flag which needs to be cleared by the debugger
                         resuming_d[hart_sel] = 1'b1;
                     end
                     // an exception occurred during execution
-                    Exception: exception = 1'b1;
+                    Exception_add: exception = 1'b1;
                     // core can write data registers
                     [(dm::DataAddr):DataEnd]: begin
                         data_valid_o = 1'b1;
@@ -288,7 +288,12 @@ module dm_mem #(
                     default: ;
                 endcase
             end
+
         end
+else begin
+        halted       = '0;
+        going        = 1'b0;
+end
 
         data_o = data_bits;
     end
